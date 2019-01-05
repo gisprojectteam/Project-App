@@ -1,15 +1,17 @@
 # import necessary libraries
+import os
 from flask import (
     Flask,
     render_template,
     jsonify,
+   
     request)
 
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///db/db.sqlite"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', '') or "sqlite:///db/db.sqlite"
 
 db = SQLAlchemy(app)
 
@@ -18,41 +20,54 @@ class Gis(db.Model):
     __tablename__ = 'gisdata'
 
     id = db.Column(db.Integer, primary_key=True)
-    nickname = db.Column(db.String(64))
-    age = db.Column(db.Integer)
+    latitude = db.Column(db.String(64))
+    longitude = db.Column(db.String(64))
+    altitude = db.Column(db.String(64))
+    time = db.Column(db.String(64))
 
     def __repr__(self):
-        return '<Gis %r>' % (self.nickname)
+        return '<Gis %r>' % (self.latitude)
 
 
-@app.before_first_request
-def setup():
-    # Recreate database each time for demo
-    db.drop_all()
-    db.create_all()
-
+# request.home['']
 @app.route("/")
 def home():
     return render_template("home.html")
 
 
+@app.route("/send", methods=["GET", "POST"])
+def send():
+    if request.method == "POST":
+        latitude = request.form["info_cur_lat"]
+        longitude = request.form["info_cur_lng"]
+        altitude = request.form["info_cur_alt"]
+        time = request.form["info_cur_tm"]
 
+        location = Gis(latitude=latitude, longitude=longitude, altitude=altitude, time=time)
+        db.session.add(location)
+        db.session.commit()
 
-# @app.route("/api/data")
-# def list_pets():
-#     results = db.session.query(Pet.nickname, Pet.age).all()
+        return "Receive data"
 
-#     pets = []
-#     for result in results:
-#         pets.append({
-#             "nickname": result[0],
-#             "age": result[1]
-#         })
-#     return jsonify(pets)
+        
+
+@app.route("/api/data")
+def list_locations():
+    results = db.session.query(Gis.latitude, Gis.longitude, Gis.altitude, Gis.time).all()
+
+    locations = []
+    for result in results:
+        locations.append({
+            "latitude": result[0],
+            "longitude": result[1],
+            "altitude": result[2],
+            "time": result[3]
+        })
+    return jsonify(locations)
 
 
 
 
 
 if __name__ == "__main__":
-    app.run()
+   app.run(debug=True)

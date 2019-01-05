@@ -43,11 +43,12 @@ function startup() {
       .catch(function(err) {
         console.log(err.name + ": " + err.message);
       });
-    
       var front = false;
       document.getElementById("flip-button").onclick = function() { front = !front; };
-      
+     
       var constraints = { video: { facingMode: (front? "user" : "environment") } };  
+      
+       
     }        
-            
+    
     window.addEventListener('load', startup);
