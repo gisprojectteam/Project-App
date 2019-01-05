@@ -14,28 +14,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', '') or "s
 
 db = SQLAlchemy(app)
 
-
 class Gis(db.Model):
     __tablename__ = 'gisdata'
 
     id = db.Column(db.Integer, primary_key=True)
-    latitude = db.Column(db.Float)
-    longitude = db.Column(db.Float)
-    altitude = db.Column(db.Float)
+    latitude = db.Column(db.String(64))
+    longitude = db.Column(db.String(64))
+    altitude = db.Column(db.String(64))
     time = db.Column(db.String(64))
 
     def __repr__(self):
-        return '<Gis %r>'
+        return '<Gis %r>' % (self.latitude)
 
 
-@app.before_first_request
-def setup():
-    # Recreate database each time
-    db.drop_all()
-    db.create_all()
-
-
-# request.home['']
 @app.route("/")
 def home():
     return render_template("home.html")
@@ -44,20 +35,16 @@ def home():
 @app.route("/send", methods=["GET", "POST"])
 def send():
     if request.method == "POST":
-        latitude = request.home["info_cur_lat"]
-        longitude = request.home["info_cur_lng"]
-        altitude = request.home["info_cur_alt"]
-        time = request.home["info_cur_tm"]
+        latitude = request.form["info_cur_lat"]
+        longitude = request.form["info_cur_lng"]
+        altitude = request.form["info_cur_alt"]
+        time = request.form["info_cur_tm"]
 
-        location = location(latitude=latitude, longitude=longitude, altitude=altitude, time=time)
+        location = Gis(latitude=latitude, longitude=longitude, altitude=altitude, time=time)
         db.session.add(location)
         db.session.commit()
 
         return "Receive data"
-
-    return render_template("home.html")
-
-
 
 
 @app.route("/api/data")
@@ -66,7 +53,7 @@ def list_locations():
 
     locations = []
     for result in results:
-        locationss.append({
+        locations.append({
             "latitude": result[0],
             "longitude": result[1],
             "altitude": result[2],
@@ -75,8 +62,5 @@ def list_locations():
     return jsonify(locations)
 
 
-
-
-
 if __name__ == "__main__":
-    app.run()
+   app.run(debug=True)
