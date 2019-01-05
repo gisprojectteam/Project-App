@@ -24,7 +24,7 @@ class Gis(db.Model):
     time = db.Column(db.String(64))
 
     def __repr__(self):
-        return '<Gis %r>
+        return '<Gis %r>'
 
 
 @app.before_first_request
